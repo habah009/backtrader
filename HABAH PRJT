@@ -1,0 +1,39 @@
+import backtrader as bt
+import pandas as pd
+
+# Define the trading strategy
+class SMABacktest(bt.SignalStrategy):
+    def __init__(self):
+        # Add indicators
+        self.sma_short = bt.indicators.SimpleMovingAverage(self.data.close, period=10)
+        self.sma_long = bt.indicators.SimpleMovingAverage(self.data.close, period=50)
+
+        # Add signals
+        self.signal_add(bt.SIGNAL_LONG, self.data.close)
+        self.signal_add(bt.SIGNAL_SHORT, self.data.close)
+
+    def next(self):
+        # Trading logic
+        if self.sma_short > self.sma_long:
+            if not self.position:
+                self.buy()
+        elif self.sma_short < self.sma_long:
+            if self.position:
+                self.sell()
+
+# Initialize the Backtrader engine
+cerebro = bt.Cerebro()
+
+# Add strategy to the engine
+cerebro.addstrategy(SMABacktest)
+
+# Load data
+data = bt.feeds.PandasData(dataname=pd.read_csv('your_historical_data.csv'))
+cerebro.adddata(data)
+
+# Set initial cash and run
+cerebro.broker.set_cash(10000)
+cerebro.run()
+
+# Plot the results
+cerebro.plot()
